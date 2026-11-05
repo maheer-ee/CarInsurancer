@@ -20,6 +20,7 @@ export default function QuoteFlow() {
   const [step, setStep] = useState(0);
   const [car, setCar] = useState({ zip: "", year: "", make: "", model: "" });
   const [coverage, setCoverage] = useState({ liability: "", collision: "", comprehensive: "" });
+  const [reviewVisit, setReviewVisit] = useState(0);
   const [editingCar, setEditingCar] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
@@ -36,6 +37,7 @@ export default function QuoteFlow() {
 
   function goTo(next: number) {
     moved.current = true;
+    if (next === 2) setReviewVisit((visit) => visit + 1);
     setStep(next);
   }
 
@@ -48,7 +50,7 @@ export default function QuoteFlow() {
 
   return (
     <div className="flow">
-      {imageUrl && <VehiclePreview key={imageUrl} vehicle={vehicle} imageUrl={imageUrl} />}
+      {imageUrl && <VehiclePreview key={imageUrl} vehicle={vehicle} imageUrl={imageUrl} compact={step !== 0} />}
       <ol className="steps" aria-label="Comparison progress">
         {steps.map((label, index) => (
           <li key={label} aria-current={index === step ? "step" : undefined}>
@@ -98,14 +100,14 @@ export default function QuoteFlow() {
           <>
             <p className="selection">{car.year} {car.make.trim()} {car.model.trim()} <span>· ZIP {car.zip}</span></p>
             <dl className="comparison">
-              <div>
+              <div className="liability-summary">
                 <dt>Liability limits</dt>
                 <dd>{liabilityAmounts(coverage.liability).map((amount, index) => (
                   <span className="block" key={index}>{amount} {liabilityLabels[index]}</span>
                 ))}</dd>
               </div>
-              <div><dt>Collision deductible</dt><dd>{formatDeductible(coverage.collision)}</dd></div>
-              <div><dt>Comprehensive deductible</dt><dd>{formatDeductible(coverage.comprehensive)}</dd></div>
+              <div><dt>Collision deductible</dt><dd className="whitespace-nowrap">{formatDeductible(coverage.collision)}</dd></div>
+              <div><dt>Comprehensive deductible</dt><dd className="whitespace-nowrap">{formatDeductible(coverage.comprehensive)}</dd></div>
             </dl>
 
             <div className="actions">
@@ -115,7 +117,7 @@ export default function QuoteFlow() {
           </>
         )}
         <div hidden={step !== 2} className="mt-5">
-          <QuoteComparison key={JSON.stringify([car, coverage])} />
+          <QuoteComparison reviewVisit={reviewVisit} selectionKey={JSON.stringify([car, coverage])} />
         </div>
       </section>
     </div>

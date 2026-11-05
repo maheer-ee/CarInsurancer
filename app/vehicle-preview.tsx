@@ -1,13 +1,13 @@
 import { useState } from "react";
 
-export default function VehiclePreview({ vehicle, imageUrl }: { vehicle: string; imageUrl: string }) {
+export default function VehiclePreview({ vehicle, imageUrl, compact }: { vehicle: string; imageUrl: string; compact: boolean }) {
   const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading");
 
   return (
-    <figure className="vehicle-preview">
+    <figure className="vehicle-preview" data-compact={compact}>
       {status !== "unavailable" && (
-        <img className="vehicle-photo" src={imageUrl} alt={vehicle}
-          hidden={status !== "ready"} onLoad={() => setStatus("ready")}
+        <img className="vehicle-photo" src={imageUrl} alt=""
+          data-loading={status === "loading"} onLoad={() => setStatus("ready")}
           onError={() => setStatus("unavailable")} />
       )}
       <figcaption className="vehicle-caption">
