@@ -2,21 +2,27 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
-const steps = ["Your car", "Your coverage", "Compare quotes"];
+import VehicleSelect from "./vehicle-select";
+
+const steps = ["Your car", "Your coverage", "Review selections"];
 const descriptions = [
   "Start with the vehicle you want to insure.",
   "Choose the coverage settings you want to compare.",
-  "Review premiums, policy terms, and coverage side by side.",
+  "Check the vehicle and coverage settings you entered.",
 ];
 const liabilityOptions = ["50/100/50", "100/300/100", "250/500/100"];
+const liabilityLabels = ["injuries per person", "injuries per accident", "property damage per accident"];
 const deductibleOptions = ["250", "500", "1000", "2000"];
 
 export default function QuoteFlow() {
   const [step, setStep] = useState(0);
   const [car, setCar] = useState({ zip: "", year: "", make: "", model: "" });
   const [coverage, setCoverage] = useState({ liability: "", collision: "", comprehensive: "" });
+  const [editingCar, setEditingCar] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
+  const makesUrl = car.year ? "/api/vehicles?year=" + encodeURIComponent(car.year) : undefined;
+  const modelsUrl = makesUrl && car.make ? makesUrl + "&make=" + encodeURIComponent(car.make) : undefined;
 
   useEffect(() => {
     if (moved.current) heading.current?.focus();
@@ -29,7 +35,9 @@ export default function QuoteFlow() {
 
   function advance(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    goTo(step + 1);
+    if (step === 0 && !car.model) return;
+    goTo(editingCar ? 2 : step + 1);
+    setEditingCar(false);
   }
 
   return (
@@ -46,31 +54,36 @@ export default function QuoteFlow() {
         <p className="intro">{descriptions[step]}</p>
         {step === 0 && (
           <form onSubmit={advance}>
+            <p className="empty mb-6">Live quotes are unavailable. You can still review your coverage selections.</p>
             <div className="fields grid gap-5 sm:grid-cols-2">
               <label>ZIP code<input autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{5}" title="Enter a five-digit ZIP code" required value={car.zip} onChange={(e) => setCar({ ...car, zip: e.target.value })} /></label>
-              <label>Model year<input inputMode="numeric" pattern="[0-9]{4}" title="Enter a four-digit model year" required value={car.year} onChange={(e) => setCar({ ...car, year: e.target.value })} /></label>
-              <label>Make<input required pattern=".*\S.*" value={car.make} onChange={(e) => setCar({ ...car, make: e.target.value })} /></label>
-              <label>Model<input required pattern=".*\S.*" value={car.model} onChange={(e) => setCar({ ...car, model: e.target.value })} /></label>
+              <VehicleSelect label="Year" url="/api/vehicles" value={car.year}
+                onChange={(year) => setCar({ ...car, year, make: "", model: "" })} />
+              <VehicleSelect key={car.year} label="Make" url={makesUrl} value={car.make}
+                prerequisite="Choose a year first" onChange={(make) => setCar({ ...car, make, model: "" })} />
+              <VehicleSelect key={modelsUrl ?? "no-model"} label="Model" url={modelsUrl} value={car.model}
+                prerequisite="Choose a make first" onChange={(model) => setCar({ ...car, model })} />
             </div>
-            <div className="actions"><button className="primary" type="submit">Continue to coverage</button></div>
+            <div className="actions"><button className="primary disabled:opacity-60" type="submit" disabled={!car.model}>{editingCar ? "Review selections" : "Continue to coverage"}</button></div>
           </form>
         )}
         {step === 1 && (
           <form onSubmit={advance}>
             <div className="fields grid gap-5 sm:grid-cols-2">
-              <label className="sm:col-span-2">Liability limits
-                <select required aria-describedby="limit-help" value={coverage.liability} onChange={(e) => setCoverage({ ...coverage, liability: e.target.value })}>
+              <div className="grid content-start gap-1.5 sm:col-span-2">
+                <label htmlFor="liability">Liability limits</label>
+                <select id="liability" required aria-describedby="limit-help" value={coverage.liability} onChange={(e) => setCoverage({ ...coverage, liability: e.target.value })}>
                   <option value="">Choose limits</option>
-                  {liabilityOptions.map((option) => <option key={option}>{option}</option>)}
+                  {liabilityOptions.map((option) => <option key={option} value={option}>{liabilityAmounts(option).join(" / ")}</option>)}
                 </select>
-                <small id="limit-help">In thousands of dollars: injury per person, injury per accident, and property damage.</small>
-              </label>
-              <Deductible label="Collision deductible" value={coverage.collision} change={(collision) => setCoverage({ ...coverage, collision })} />
-              <Deductible label="Comprehensive deductible" value={coverage.comprehensive} change={(comprehensive) => setCoverage({ ...coverage, comprehensive })} />
+                <small id="limit-help">In order: injuries per person, injuries per accident, and property damage per accident.</small>
+              </div>
+              <Deductible kind="collision" label="Collision deductible" help="What you pay toward covered damage to your car after a collision." value={coverage.collision} change={(collision) => setCoverage({ ...coverage, collision })} />
+              <Deductible kind="comprehensive" label="Comprehensive deductible" help="What you pay toward covered losses such as theft, hail, or vandalism." value={coverage.comprehensive} change={(comprehensive) => setCoverage({ ...coverage, comprehensive })} />
             </div>
             <div className="actions">
               <button type="button" className="secondary" onClick={() => goTo(0)}>Back</button>
-              <button type="submit" className="primary">View comparison</button>
+              <button type="submit" className="primary">Review selections</button>
             </div>
           </form>
         )}
@@ -78,15 +91,23 @@ export default function QuoteFlow() {
           <>
             <p className="selection">{car.year} {car.make.trim()} {car.model.trim()} <span>· ZIP {car.zip}</span></p>
             <dl className="comparison">
-              <div><dt>Liability limits</dt><dd>{coverage.liability}</dd></div>
+              <div>
+                <dt>Liability limits</dt>
+                <dd>{liabilityAmounts(coverage.liability).map((amount, index) => (
+                  <span className="block" key={index}>{amount} {liabilityLabels[index]}</span>
+                ))}</dd>
+              </div>
               <div><dt>Collision deductible</dt><dd>{formatDeductible(coverage.collision)}</dd></div>
               <div><dt>Comprehensive deductible</dt><dd>{formatDeductible(coverage.comprehensive)}</dd></div>
             </dl>
             <div className="empty">
               <h2>No quotes available</h2>
-              <p>A live quote provider needs to be connected before prices and policy terms can appear here.</p>
+              <p>Live prices and policy terms are currently unavailable.</p>
             </div>
-            <div className="actions"><button type="button" className="secondary" onClick={() => goTo(1)}>Edit coverage</button></div>
+            <div className="actions">
+              <button type="button" className="secondary" onClick={() => { setEditingCar(true); goTo(0); }}>Edit car</button>
+              <button type="button" className="secondary" onClick={() => goTo(1)}>Edit coverage</button>
+            </div>
           </>
         )}
       </section>
@@ -94,18 +115,30 @@ export default function QuoteFlow() {
   );
 }
 
+function liabilityAmounts(limits: string) {
+  return limits.split("/").map((limit) => "$" + (Number(limit) * 1000).toLocaleString("en-US"));
+}
+
 function formatDeductible(value: string) {
   return value === "none" ? "No coverage" : `$${Number(value).toLocaleString("en-US")}`;
 }
 
-function Deductible({ label, value, change }: { label: string; value: string; change: (value: string) => void }) {
+function Deductible({ kind, label, help, value, change }: {
+  kind: "collision" | "comprehensive";
+  label: string;
+  help: string;
+  value: string;
+  change: (value: string) => void;
+}) {
   return (
-    <label>{label}
-      <select required value={value} onChange={(e) => change(e.target.value)}>
+    <div className="grid content-start gap-1.5">
+      <label htmlFor={kind}>{label}</label>
+      <select id={kind} required aria-describedby={kind + "-help"} value={value} onChange={(e) => change(e.target.value)}>
         <option value="">Choose a deductible</option>
         {deductibleOptions.map((option) => <option key={option} value={option}>{formatDeductible(option)}</option>)}
-        <option value="none">No coverage</option>
+        <option value="none">Skip {kind} coverage</option>
       </select>
-    </label>
+      <small id={kind + "-help"}>{help}</small>
+    </div>
   );
 }
