@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import QuoteComparison from "./quote-comparison";
+import VehiclePreview from "./vehicle-preview";
 import VehicleSelect from "./vehicle-select";
 
 const steps = ["Your car", "Your coverage", "Review selections"];
@@ -22,6 +24,10 @@ export default function QuoteFlow() {
   const heading = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
   const makesUrl = car.year ? "/api/vehicles?year=" + encodeURIComponent(car.year) : undefined;
+  const vehicle = car.model ? [car.year, car.make, car.model].join(" ") : "";
+  const imageUrl = car.model ? "/api/vehicle-image?" + new URLSearchParams({
+    year: car.year, make: car.make, model: car.model,
+  }) : undefined;
   const modelsUrl = makesUrl && car.make ? makesUrl + "&make=" + encodeURIComponent(car.make) : undefined;
 
   useEffect(() => {
@@ -42,6 +48,7 @@ export default function QuoteFlow() {
 
   return (
     <div className="flow">
+      {imageUrl && <VehiclePreview key={imageUrl} vehicle={vehicle} imageUrl={imageUrl} />}
       <ol className="steps" aria-label="Comparison progress">
         {steps.map((label, index) => (
           <li key={label} aria-current={index === step ? "step" : undefined}>
@@ -54,7 +61,7 @@ export default function QuoteFlow() {
         <p className="intro">{descriptions[step]}</p>
         {step === 0 && (
           <form onSubmit={advance}>
-            <p className="empty mb-6">Live quotes are unavailable. You can still review your coverage selections.</p>
+            <p className="empty mb-6">Review your coverage selections, then get quotes directly from insurers.</p>
             <div className="fields grid gap-5 sm:grid-cols-2">
               <label>ZIP code<input autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{5}" title="Enter a five-digit ZIP code" required value={car.zip} onChange={(e) => setCar({ ...car, zip: e.target.value })} /></label>
               <VehicleSelect label="Year" url="/api/vehicles" value={car.year}
@@ -100,16 +107,16 @@ export default function QuoteFlow() {
               <div><dt>Collision deductible</dt><dd>{formatDeductible(coverage.collision)}</dd></div>
               <div><dt>Comprehensive deductible</dt><dd>{formatDeductible(coverage.comprehensive)}</dd></div>
             </dl>
-            <div className="empty">
-              <h2>No quotes available</h2>
-              <p>Live prices and policy terms are currently unavailable.</p>
-            </div>
+
             <div className="actions">
               <button type="button" className="secondary" onClick={() => { setEditingCar(true); goTo(0); }}>Edit car</button>
               <button type="button" className="secondary" onClick={() => goTo(1)}>Edit coverage</button>
             </div>
           </>
         )}
+        <div hidden={step !== 2} className="mt-5">
+          <QuoteComparison key={JSON.stringify([car, coverage])} />
+        </div>
       </section>
     </div>
   );

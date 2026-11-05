@@ -1,44 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
-  --ink: #20291f;
-  --muted: #50604d;
-  --line: #d9e1d3;
-  --accent: #235739;
+  color-scheme: dark;
+  --ink: #edf4ee;
+  --muted: #c8d7ce;
+  --line: #61796c;
+  --accent: #a4ddb5;
 }
 body {
   margin: 0;
-  background: #f4f6ef;
+  background: #111814;
   color: var(--ink);
   font-family: system-ui, sans-serif;
 }
-::selection { background: #d4e9bd; color: var(--ink); }
+::selection { background: #d4e9bd; color: #111814; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .shell { max-width: 76rem; margin: auto; padding: 0 clamp(1rem, 5vw, 3.5rem) 4rem; }
-.masthead { display: flex; align-items: center; gap: .7rem; padding: 1.2rem 0; border-bottom: 1px solid var(--line); font-weight: 700; }
-.brand-mark { display: grid; place-items: center; background: var(--accent); color: white; width: 2.25rem; height: 2.25rem; border-radius: .6rem; }
 .flow { max-width: 44rem; margin: clamp(2rem, 7vw, 5.5rem) auto 0; }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; list-style: none; padding: 0; margin: 0 0 1.25rem; }
 .steps li { display: flex; align-items: center; gap: .45rem; border-top: 2px solid var(--line); padding-top: .75rem; font-size: clamp(.75rem, 2vw, .875rem); color: var(--muted); }
 .steps li[aria-current] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .steps span { flex: none; }
-.panel { background: #fff; border: 1px solid var(--line); border-radius: 1rem; padding: clamp(1.25rem, 5vw, 3.25rem); }
+.panel { color-scheme: light; --ink: #18291f; --muted: #465c4e; --line: #d8c8af; --accent: #245d3c; color: var(--ink); background: #f5eddf; border: 1px solid var(--line); border-radius: 1rem; padding: clamp(1.25rem, 5vw, 3.25rem); }
 h1 { font-size: clamp(2.3rem, 7vw, 4.1rem); font-weight: 720; line-height: 1.04; letter-spacing: -.04em; }
 .intro { color: var(--muted); margin: .85rem 0 1.85rem; }
 label { display: grid; align-content: start; gap: .4rem; font-weight: 620; }
-input, select { width: 100%; min-width: 0; min-height: 2.9rem; border: 1px solid #9dab9a; border-radius: .5rem; padding: .6rem .75rem; background: #fcfdf9; color: var(--ink); font: inherit; font-weight: 400; }
+input, select { width: 100%; min-width: 0; min-height: 2.9rem; border: 1px solid #a18c71; border-radius: .5rem; padding: .6rem .75rem; background: #fffcf6; color: var(--ink); font: inherit; font-weight: 400; }
 small, .selection span { color: var(--muted); font-weight: 400; }
 .actions { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
 button { border-radius: .5rem; min-height: 2.85rem; padding: .65rem 1rem; font-weight: 650; cursor: pointer; }
-.primary { color: white; background: var(--accent); }
-.primary:hover { background: #193f29; }
-.secondary { color: var(--accent); border: 1px solid #9dab9a; }
-.secondary:hover { background: #edf4e8; }
+.primary { color: #fff; background: var(--accent); }
+.primary:hover { background: #19472d; }
+.secondary { color: var(--accent); border: 1px solid #a18c71; }
+.secondary:hover { background: #eadcc6; }
 .selection { font-weight: 650; overflow-wrap: anywhere; }
 .comparison { margin: .7rem 0 1.5rem; }
 .comparison div { display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 0; border-bottom: 1px solid var(--line); }
 .comparison dd { font-variant-numeric: tabular-nums; text-align: right; }
-.empty { background: #eff5e9; padding: 1rem 1.15rem; border-radius: .75rem; }
+.empty { background: #eee2cf; padding: 1rem 1.15rem; border-radius: .75rem; }
 .empty h2 { font-weight: 700; }
 .empty p { margin-top: .25rem; color: var(--muted); }
+
+.vehicle-preview { margin: 0 0 1.65rem; overflow: hidden; border-radius: 1rem; background: #f1e6d5; color: #18291f; }
+.vehicle-caption { padding: .8rem clamp(.85rem, 4vw, 1.4rem); }
+.vehicle-name { font-weight: 700; overflow-wrap: anywhere; }
+.vehicle-note { color: #465c4e; font-size: .85rem; }
+.flow { margin-top: clamp(1.25rem, 4vw, 2.75rem); }
+
+
+.vehicle-photo:not([hidden]) { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; padding: .5rem clamp(.5rem, 2vw, 1rem) 0; object-fit: contain; }
